@@ -1,0 +1,158 @@
+package org.desp.mining.listener;
+
+import static org.desp.mining.utils.MiningUtils.getMaterials;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
+import net.Indyuce.mmoitems.MMOItems;
+import net.Indyuce.mmoitems.api.Type;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.desp.IDEPass.api.IDEPassAPI;
+import org.desp.IDEPass.dto.IDEPassUserDataDto;
+import org.desp.mining.Mining;
+import org.desp.mining.database.MiningItemRepository;
+import org.desp.mining.database.MiningRepository;
+import org.desp.mining.dto.MiningDto;
+import org.desp.mining.dto.MiningItemDto;
+
+public class MiningListener implements Listener {
+
+    private final MiningRepository miningRepository = MiningRepository.getInstance();
+    private final MiningItemRepository itemRepository = MiningItemRepository.getInstance();
+    public static Map<String, MiningDto> miningCache = new HashMap<>();
+
+    public MiningListener() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                int cacheSize = miningCache.size();
+                System.out.println("Mining cacheSize 캐시 크기: " + cacheSize);
+            }
+        }.runTaskTimer(Mining.getInstance(), 0L, 100L); // 즉시 실행 후 100틱(5초)마다 반복
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+
+        System.out.println("MiningListener.onPlayerJoin");
+        Player player = event.getPlayer();
+        String user_id = player.getName();
+        String uuid = player.getUniqueId().toString();
+
+        Bukkit.getScheduler().runTaskLaterAsynchronously(Mining.getInstance(), () -> {
+            MiningDto playerMiningData1 = miningRepository.getPlayerMiningData(uuid, user_id);
+            miningCache.put(uuid, playerMiningData1);
+        }, 30L);
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
+
+        if (miningCache.get(uuid) == null) {
+            System.out.println("uuid  = " + uuid + "'s cacche is null");
+        }
+        System.out.println("MiningListener.onPlayerQuit");
+        miningRepository.saveMining(uuid, miningCache);
+        miningCache.remove(uuid);
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        String user_id = player.getName();
+
+        String uuid = player.getUniqueId().toString();
+        Material blockType = event.getBlock().getType();
+
+        String itemID = MMOItems.getID(event.getPlayer().getInventory().getItemInMainHand());
+
+        List<Material> materialList = getMaterials();
+        if (!player.isOp()) {
+            event.setCancelled(true);
+        }
+
+        if (materialList.contains(blockType) && itemID.endsWith("곡괭이")) {
+            MiningDto miningData = miningCache.get(uuid);
+            double fatigue = miningData.getFatigue();
+
+            IDEPassUserDataDto player1 = IDEPassAPI.getPlayer(uuid);
+            boolean activate = player1.isActivate();
+
+            if (fatigue >= 100) {
+                player.sendMessage("§c 피로도가 가득 찼습니다! 채광이 불가능합니다.");
+                return;
+            }
+            player.getInventory().addItem(getRandomDropItem());
+            if (activate && "full".equals(player1.getPassType())) {
+                fatigue += 0.8;
+                if (fatigue >= 99.6) {
+                    fatigue = 100;
+                }
+            } else {
+                fatigue += 1;
+            }
+            MiningDto saveMiningDto = MiningDto.builder()
+                    .user_id(user_id)
+                    .uuid(uuid)
+                    .fatigue(fatigue)
+                    .build();
+            miningCache.put(uuid, saveMiningDto);
+
+            player.sendActionBar("§e현재 피로도: " + Math.round(fatigue * 100) / 100.0 + "%");
+
+        }
+
+    }
+
+    private ItemStack getRandomDropItem() {
+        Random random = new Random();
+        int randomValue = random.nextInt(100);
+        int cumulativeProbability = 0;
+
+        Map<String, MiningItemDto> miningCache = itemRepository.getMiningCache();
+        for (Entry<String, MiningItemDto> stringMiningItemDtoEntry : miningCache.entrySet()) {
+            cumulativeProbability += stringMiningItemDtoEntry.getValue().getItemDropPercentage();
+            if (cumulativeProbability >= randomValue) {
+                String item_id = stringMiningItemDtoEntry.getKey();
+                ItemStack dropItem = MMOItems.plugin.getItem(Type.MISCELLANEOUS, item_id);
+
+                return dropItem;
+            }
+        }
+        return null;
+    }
+
+    @EventHandler
+    public void onRightClickWithPickaxe(PlayerInteractEvent event) {
+        String itemID = MMOItems.getID(event.getPlayer().getInventory().getItemInMainHand());
+
+        if (!itemID.endsWith("곡괭이")) {
+            return;
+        }
+        if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+
+            Player player = event.getPlayer();
+            if (miningCache.get(player.getUniqueId().toString()) == null) {
+                return;
+            }
+            MiningDto miningData = miningCache.get(player.getUniqueId().toString());
+            player.sendActionBar("§a현재 피로도: " + Math.round(miningData.getFatigue() * 100) / 100.0 + "%");
+        }
+    }
+}

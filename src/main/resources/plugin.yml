@@ -1,0 +1,7 @@
+name: Mining
+version: '1.0-SNAPSHOT'
+main: org.desp.mining.Mining
+api-version: '1.20'
+commands:
+
+depend: [Vault, MongoLibraryPlugin, BinggreAPI, BinggreEconomy, MMOCore]
