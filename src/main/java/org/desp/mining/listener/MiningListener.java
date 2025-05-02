@@ -1,16 +1,12 @@
 package org.desp.mining.listener;
 
-import static org.desp.mining.utils.MiningUtils.getMaterials;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -29,11 +25,21 @@ import org.desp.mining.database.MiningRepository;
 import org.desp.mining.dto.MiningDto;
 import org.desp.mining.dto.MiningItemDto;
 
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
+
+import static org.desp.mining.utils.MiningUtils.getMaterials;
+
 public class MiningListener implements Listener {
 
     private final MiningRepository miningRepository = MiningRepository.getInstance();
     private final MiningItemRepository itemRepository = MiningItemRepository.getInstance();
     public static Map<String, MiningDto> miningCache = new HashMap<>();
+
+    private final Cache<Player, Integer> macro = CacheBuilder.newBuilder()
+            .expireAfterAccess(2, TimeUnit.SECONDS)
+            .build();
 
     public MiningListener() {
         new BukkitRunnable() {
@@ -81,13 +87,15 @@ public class MiningListener implements Listener {
         Material blockType = event.getBlock().getType();
 
         String itemID = MMOItems.getID(event.getPlayer().getInventory().getItemInMainHand());
-
+        if (itemID == null) {
+            return;
+        }
         List<Material> materialList = getMaterials();
         if (!player.isOp()) {
             event.setCancelled(true);
         }
 
-        if (materialList.contains(blockType) && itemID.endsWith("곡괭이")) {
+        if (materialList.contains(blockType) && itemID.contains("곡괭이")) {
             MiningDto miningData = miningCache.get(uuid);
             double fatigue = miningData.getFatigue();
 
@@ -95,6 +103,7 @@ public class MiningListener implements Listener {
             boolean activate = player1.isActivate();
 
             if (fatigue >= 100) {
+                macroLog(player);
                 player.sendMessage("§c 피로도가 가득 찼습니다! 채광이 불가능합니다.");
                 return;
             }
@@ -119,6 +128,22 @@ public class MiningListener implements Listener {
         }
 
     }
+
+    private void macroLog(Player player) {
+        int oldCount = Optional.ofNullable(macro.getIfPresent(player)).orElse(0);
+        int newCount = oldCount + 1;
+
+        macro.put(player, newCount);
+        if (newCount % 10 == 0) {
+            String notice = String.format("%s님이 피로도 100에서 %d회 광질했습니다.", player.getName(), newCount);
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p.isOp() || p.hasPermission("displayname.staff")) {
+                    p.sendMessage(notice);
+                }
+            }
+        }
+    }
+
 
     private ItemStack getRandomDropItem() {
         Random random = new Random();
