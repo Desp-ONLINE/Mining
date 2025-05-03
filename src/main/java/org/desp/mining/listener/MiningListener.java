@@ -126,7 +126,6 @@ public class MiningListener implements Listener {
             player.sendActionBar("§e현재 피로도: " + Math.round(fatigue * 100) / 100.0 + "%");
 
         }
-
     }
 
     private void macroLog(Player player) {
@@ -135,12 +134,7 @@ public class MiningListener implements Listener {
 
         macro.put(player, newCount);
         if (newCount % 10 == 0) {
-            String notice = String.format("%s님이 피로도 100에서 %d회 광질했습니다.", player.getName(), newCount);
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p.isOp() || p.hasPermission("displayname.staff")) {
-                    p.sendMessage(notice);
-                }
-            }
+            player.performCommand("spawn");
         }
     }
 
