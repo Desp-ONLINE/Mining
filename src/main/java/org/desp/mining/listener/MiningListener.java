@@ -41,20 +41,8 @@ public class MiningListener implements Listener {
             .expireAfterAccess(2, TimeUnit.SECONDS)
             .build();
 
-    public MiningListener() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                int cacheSize = miningCache.size();
-                System.out.println("Mining cacheSize 캐시 크기: " + cacheSize);
-            }
-        }.runTaskTimer(Mining.getInstance(), 0L, 100L); // 즉시 실행 후 100틱(5초)마다 반복
-    }
-
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-
-        System.out.println("MiningListener.onPlayerJoin");
         Player player = event.getPlayer();
         String user_id = player.getName();
         String uuid = player.getUniqueId().toString();
@@ -70,10 +58,6 @@ public class MiningListener implements Listener {
         Player player = event.getPlayer();
         String uuid = player.getUniqueId().toString();
 
-        if (miningCache.get(uuid) == null) {
-            System.out.println("uuid  = " + uuid + "'s cacche is null");
-        }
-        System.out.println("MiningListener.onPlayerQuit");
         miningRepository.saveMining(uuid, miningCache);
         miningCache.remove(uuid);
     }
@@ -161,7 +145,7 @@ public class MiningListener implements Listener {
     public void onRightClickWithPickaxe(PlayerInteractEvent event) {
         String itemID = MMOItems.getID(event.getPlayer().getInventory().getItemInMainHand());
 
-        if (!itemID.endsWith("곡괭이")) {
+        if (!itemID.contains("곡괭이")) {
             return;
         }
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {

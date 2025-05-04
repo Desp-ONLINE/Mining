@@ -21,7 +21,6 @@ public class MiningRepository {
     private MiningRepository() {
         DatabaseRegister database = new DatabaseRegister();
         this.mining = database.getDatabase().getCollection("Mining");
-//        loadMiningData();
     }
 
     public static synchronized MiningRepository getInstance() {
@@ -31,34 +30,34 @@ public class MiningRepository {
         return instance;
     }
 
-    private void loadMiningData() {
-        FindIterable<Document> documents = mining.find();
-        for (Document document : documents) {
-            String userId = document.getString("user_id");
-            String uuid = document.getString("uuid");
-            double fatigue = document.getDouble("fatigue");
-
-            MiningDto miningDto = MiningDto.builder()
-                    .user_id(userId)
-                    .uuid(uuid)
-                    .fatigue(fatigue)
-                    .build();
-            miningCache.put(uuid, miningDto);
-        }
-    }
-
     public MiningDto getPlayerMiningData(String uuid, String user_id) {
         Document query = mining.find(Filters.eq("uuid", uuid)).first();
 
         if (query != null) {
             // db에 값 있으면 다시 돌려주고.
-//            loadMiningData();
             String userId = query.getString("user_id");
             double fatigue = query.getDouble("fatigue");
             return MiningDto.builder().user_id(userId).uuid(uuid).fatigue(fatigue).build();
         } else {
             // db에 값 없으면 초기값으로 return해줌
             return MiningDto.builder().user_id(user_id).uuid(uuid).fatigue(0).build();
+        }
+    }
+
+    public boolean exitsPlayer(String user_id) {
+        Document query = mining.find(Filters.eq("user_id", user_id)).first();
+
+        return query != null;
+    }
+
+    public MiningDto getPlayer(String user_id) {
+        Document query = mining.find(Filters.eq("user_id", user_id)).first();
+        if (query != null) {
+            String uuid = query.getString("uuid");
+            return MiningListener.miningCache.get(uuid);
+        } else {
+            System.out.println("데이터 없음");
+            return null;
         }
     }
 
@@ -92,10 +91,6 @@ public class MiningRepository {
     public void reduceFatigue() {
         for (String uuid : MiningListener.miningCache.keySet()) {
             MiningDto dto = MiningListener.miningCache.get(uuid);
-            if (dto.getUser_id().equals("dople_L")) {
-//                System.out.println("newFatigue = " + newFatigue);
-                System.out.println("dto.getFatigue() = " + dto.getFatigue());
-            }
             double newFatigue = Math.max(dto.getFatigue() - 1, 0);
 
             dto.setFatigue(newFatigue);
