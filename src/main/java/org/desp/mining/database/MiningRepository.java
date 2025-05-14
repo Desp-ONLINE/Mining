@@ -6,9 +6,14 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.ReplaceOptions;
 import lombok.Getter;
 import org.bson.Document;
+import org.bukkit.Bukkit;
+import org.bukkit.SoundCategory;
+import org.bukkit.entity.Player;
 import org.desp.mining.dto.MiningDto;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
 import org.desp.mining.listener.MiningListener;
 
 public class MiningRepository {
@@ -92,6 +97,15 @@ public class MiningRepository {
         for (String uuid : MiningListener.miningCache.keySet()) {
             MiningDto dto = MiningListener.miningCache.get(uuid);
             double newFatigue = Math.max(dto.getFatigue() - 1, 0);
+
+            if(newFatigue < 1 && dto.getFatigue() >= 1){
+                String userId = dto.getUser_id();
+                Player player = Bukkit.getPlayer(userId);
+                player.sendMessage("");
+                player.sendMessage("§7[채광 알림] §f채광하느라 지친 §c피로§f가 싹~ 가라 앉은 것 같습니다.");
+                player.sendMessage("");
+                player.playSound(player, "minecraft:block.stem.break", SoundCategory.AMBIENT, 10, 2);
+            }
 
             dto.setFatigue(newFatigue);
             MiningListener.miningCache.replace(uuid, dto);
