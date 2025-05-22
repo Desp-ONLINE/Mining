@@ -8,5 +8,5 @@ import lombok.Setter;
 @Builder
 public class MiningItemDto {
     private String item_id;
-    private int itemDropPercentage;
+    private double itemDropPercentage;
 }

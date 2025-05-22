@@ -126,7 +126,7 @@ public class MiningListener implements Listener {
     private ItemStack getRandomDropItem() {
         Random random = new Random();
         int randomValue = random.nextInt(100);
-        int cumulativeProbability = 0;
+        double cumulativeProbability = 0;
 
         Map<String, MiningItemDto> miningCache = itemRepository.getMiningCache();
         for (Entry<String, MiningItemDto> stringMiningItemDtoEntry : miningCache.entrySet()) {

@@ -30,7 +30,7 @@ public class MiningItemRepository {
         FindIterable<Document> documents = miningDropItem.find();
         for (Document document : documents) {
             String item_id = document.getString("item_id");
-            int itemDropPercentage = document.getInteger("itemDropPercentage");
+            double itemDropPercentage = document.getDouble("itemDropPercentage");
 
             MiningItemDto miningItemDto = MiningItemDto.builder()
                     .item_id(item_id)

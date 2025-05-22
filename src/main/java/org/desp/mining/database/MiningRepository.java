@@ -98,17 +98,21 @@ public class MiningRepository {
             MiningDto dto = MiningListener.miningCache.get(uuid);
             double newFatigue = Math.max(dto.getFatigue() - 1, 0);
 
+            dto.setFatigue(newFatigue);
+            MiningListener.miningCache.replace(uuid, dto);
+
             if(newFatigue < 1 && dto.getFatigue() >= 1){
                 String userId = dto.getUser_id();
                 Player player = Bukkit.getPlayer(userId);
+                if(player == null){
+                    return;
+                }
+
                 player.sendMessage("");
                 player.sendMessage("§7[채광 알림] §f채광하느라 지친 §c피로§f가 싹~ 가라 앉은 것 같습니다.");
                 player.sendMessage("");
                 player.playSound(player, "minecraft:block.stem.break", SoundCategory.AMBIENT, 10, 2);
             }
-
-            dto.setFatigue(newFatigue);
-            MiningListener.miningCache.replace(uuid, dto);
         }
     }
 }
