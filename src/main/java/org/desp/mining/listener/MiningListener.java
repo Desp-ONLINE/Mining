@@ -91,7 +91,13 @@ public class MiningListener implements Listener {
                 player.sendMessage("§c 피로도가 가득 찼습니다! 채광이 불가능합니다.");
                 return;
             }
-            player.getInventory().addItem(getRandomDropItem());
+            ItemStack rewardItem = getRandomDropItem();
+            player.getInventory().addItem(rewardItem);
+            String id = MMOItems.getID(rewardItem);
+            double itemDropPercentage = MiningItemRepository.getInstance().getMiningCache().get(id).getItemDropPercentage();
+            if(itemDropPercentage < 1){
+                player.sendMessage("§f  "+rewardItem.getItemMeta().getDisplayName()+"§f을 획득했습니다!");
+            }
             if (activate && "full".equals(player1.getPassType())) {
                 fatigue += 0.8;
                 if (fatigue >= 99.6) {
@@ -107,7 +113,7 @@ public class MiningListener implements Listener {
                     .build();
             miningCache.put(uuid, saveMiningDto);
 
-            player.sendActionBar("§e현재 피로도: " + Math.round(fatigue * 100) / 100.0 + "%");
+            player.sendActionBar("§7[채광] §e현재 피로도: §f" + Math.round(fatigue * 100) / 100.0 + "%");
 
         }
     }
@@ -125,7 +131,7 @@ public class MiningListener implements Listener {
 
     private ItemStack getRandomDropItem() {
         Random random = new Random();
-        int randomValue = random.nextInt(100);
+        double randomValue = random.nextDouble(100);
         double cumulativeProbability = 0;
 
         Map<String, MiningItemDto> miningCache = itemRepository.getMiningCache();

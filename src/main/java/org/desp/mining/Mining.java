@@ -15,6 +15,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.desp.mining.database.MiningRepository;
 import org.desp.mining.dto.MiningDto;
 import org.desp.mining.listener.MiningListener;
+import org.desp.mining.placeholder.MiningPlaceHolder;
 import org.desp.mining.scheduler.MiningScheduler;
 
 public final class Mining extends JavaPlugin {
@@ -37,6 +38,9 @@ public final class Mining extends JavaPlugin {
             String uuid = player.getUniqueId().toString();
             MiningDto playerMiningData = repository.getPlayerMiningData(uuid, user_id);
             miningCache.put(uuid,playerMiningData);
+        }
+        if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")){
+            new MiningPlaceHolder(this).register();
         }
     }
 
