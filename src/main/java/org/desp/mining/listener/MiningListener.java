@@ -161,7 +161,7 @@ public class MiningListener implements Listener {
                 return;
             }
             MiningDto miningData = miningCache.get(player.getUniqueId().toString());
-            player.sendActionBar("§a현재 피로도: " + Math.round(miningData.getFatigue() * 100) / 100.0 + "%");
+            player.sendActionBar("§§7[채광] §e현재 피로도: §f" + Math.round(miningData.getFatigue() * 100) / 100.0 + "%");
         }
     }
 }
