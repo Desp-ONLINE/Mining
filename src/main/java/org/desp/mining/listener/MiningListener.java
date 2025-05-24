@@ -24,6 +24,7 @@ import org.desp.mining.database.MiningItemRepository;
 import org.desp.mining.database.MiningRepository;
 import org.desp.mining.dto.MiningDto;
 import org.desp.mining.dto.MiningItemDto;
+import org.desp.mining.event.MiningEvent;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -93,6 +94,7 @@ public class MiningListener implements Listener {
             }
             ItemStack rewardItem = getRandomDropItem();
             player.getInventory().addItem(rewardItem);
+            Bukkit.getPluginManager().callEvent(new MiningEvent(player, rewardItem));
             String id = MMOItems.getID(rewardItem);
             double itemDropPercentage = MiningItemRepository.getInstance().getMiningCache().get(id).getItemDropPercentage();
             if(itemDropPercentage < 1){
