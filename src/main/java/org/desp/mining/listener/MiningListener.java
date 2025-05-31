@@ -51,7 +51,7 @@ public class MiningListener implements Listener {
         Bukkit.getScheduler().runTaskLaterAsynchronously(Mining.getInstance(), () -> {
             MiningDto playerMiningData1 = miningRepository.getPlayerMiningData(uuid, user_id);
             miningCache.put(uuid, playerMiningData1);
-        }, 30L);
+        }, 1L);
     }
 
     @EventHandler
