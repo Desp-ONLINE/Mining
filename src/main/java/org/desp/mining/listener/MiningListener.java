@@ -2,6 +2,7 @@ package org.desp.mining.listener;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.lumine.mythic.bukkit.events.MythicMobDeathEvent;
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import org.bukkit.Bukkit;
@@ -61,6 +62,16 @@ public class MiningListener implements Listener {
 
         miningRepository.saveMining(uuid, miningCache);
         miningCache.remove(uuid);
+    }
+    @EventHandler
+    public void onMythicmobDeath(MythicMobDeathEvent event) {
+        if(event.getKiller() instanceof  Player player){
+            Random random = new Random();
+            if(random.nextInt(0, 200) == 1){
+                MiningRepository.getInstance().reduceFatigue(player);
+                player.sendMessage("§e 사냥을 하니 채광에 대한 피로도가 좀 가신 것 같습니다.");
+            }
+        }
     }
 
     @EventHandler

@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import org.desp.mining.dto.MiningDto;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -101,10 +102,10 @@ public class MiningRepository {
             dto.setFatigue(newFatigue);
             MiningListener.miningCache.replace(uuid, dto);
 
-            if(newFatigue < 1 && dto.getFatigue() >= 1){
+            if (newFatigue < 1 && dto.getFatigue() >= 1) {
                 String userId = dto.getUser_id();
                 Player player = Bukkit.getPlayer(userId);
-                if(player == null){
+                if (player == null) {
                     return;
                 }
 
@@ -115,4 +116,14 @@ public class MiningRepository {
             }
         }
     }
+
+    public void reduceFatigue(Player player) {
+        String uuid = player.getUniqueId().toString();
+        MiningDto dto = MiningListener.miningCache.get(uuid);
+        double newFatigue = Math.max(dto.getFatigue() - 1, 0);
+
+        dto.setFatigue(newFatigue);
+        MiningListener.miningCache.replace(uuid, dto);
+    }
+
 }
