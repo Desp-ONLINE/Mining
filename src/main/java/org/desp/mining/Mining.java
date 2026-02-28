@@ -3,6 +3,7 @@ package org.desp.mining;
 import static org.desp.mining.listener.MiningListener.miningCache;
 
 import org.desp.mining.command.FatigueCommand;
+import org.desp.mining.command.ReduceFatigueCommand;
 import org.desp.mining.listener.MiningListener;
 
 import java.util.Collection;
@@ -29,6 +30,7 @@ public final class Mining extends JavaPlugin {
         MiningScheduler.startFatigueReductionTask();
         Bukkit.getPluginManager().registerEvents(new MiningListener(), this);
         getCommand("피로도확인").setExecutor(new FatigueCommand());
+        getCommand("피로도감소").setExecutor(new ReduceFatigueCommand());
 
         Collection<? extends Player> onlinePlayers = Bukkit.getServer().getOnlinePlayers();
         MiningRepository repository = MiningRepository.getInstance();

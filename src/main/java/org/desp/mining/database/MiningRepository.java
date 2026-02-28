@@ -46,6 +46,7 @@ public class MiningRepository {
             return MiningDto.builder().user_id(userId).uuid(uuid).fatigue(fatigue).build();
         } else {
             // db에 값 없으면 초기값으로 return해줌
+            System.out.println("user_id = " + user_id +"초기화됨 피로도 채광");
             return MiningDto.builder().user_id(user_id).uuid(uuid).fatigue(0).build();
         }
     }
@@ -121,6 +122,14 @@ public class MiningRepository {
         String uuid = player.getUniqueId().toString();
         MiningDto dto = MiningListener.miningCache.get(uuid);
         double newFatigue = Math.max(dto.getFatigue() - 1, 0);
+
+        dto.setFatigue(newFatigue);
+        MiningListener.miningCache.replace(uuid, dto);
+    }
+    public void reduceFatigue(Player player, double amount) {
+        String uuid = player.getUniqueId().toString();
+        MiningDto dto = MiningListener.miningCache.get(uuid);
+        double newFatigue = Math.max(dto.getFatigue() - amount, 0);
 
         dto.setFatigue(newFatigue);
         MiningListener.miningCache.replace(uuid, dto);

@@ -19,7 +19,7 @@ public class MiningScheduler {
                 repository.reduceFatigue();
 
             }
-        }.runTaskTimerAsynchronously(Mining.getInstance(), 300L, 300L);
+        }.runTaskTimerAsynchronously(Mining.getInstance(), 400L, 400L);
     }
     public static void closeScheduler(){
         bukkitTask.cancel();

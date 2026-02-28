@@ -6,3 +6,4 @@ depend: [Vault, MongoLibraryPlugin, BinggreAPI, BinggreEconomy, MMOCore]
 commands:
   피로도확인:
     aliases: ["vlfhehghkrdls"]
+  피로도감소:
