@@ -42,7 +42,7 @@ public class MiningRepository {
         if (query != null) {
             // db에 값 있으면 다시 돌려주고.
             String userId = query.getString("user_id");
-            double fatigue = query.getDouble("fatigue");
+            double fatigue = ((Number) query.get("fatigue")).doubleValue();
             return MiningDto.builder().user_id(userId).uuid(uuid).fatigue(fatigue).build();
         } else {
             // db에 값 없으면 초기값으로 return해줌

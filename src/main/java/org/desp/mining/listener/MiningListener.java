@@ -27,9 +27,6 @@ import org.desp.mining.database.MiningRepository;
 import org.desp.mining.dto.MiningDto;
 import org.desp.mining.dto.MiningItemDto;
 import org.desp.mining.event.MiningEvent;
-import org.dople.profess.API.ProfessAPI;
-import org.dople.profess.Database.PlayerRepository;
-import org.dople.profess.Dto.ProfessDTO;
 import org.swlab.etcetera.EtCetera;
 
 import java.util.*;
@@ -110,89 +107,24 @@ public class MiningListener implements Listener {
             player.getInventory().addItem(rewardItem);
             Bukkit.getPluginManager().callEvent(new MiningEvent(player, rewardItem));
 
-            ProfessDTO playerProfess = ProfessAPI.getProfessAPI().getPlayerProfess(player);
-            Integer level = playerProfess.getMiningCache().getLevel();
-            boolean addFatigue = true;
-            if (level != null) {
-                Random random = new Random();
-                double percentage = random.nextDouble(0, 100);
-                if (level <= 1) {
-                    // 레벨 1일 때
-                    if (percentage <= 1) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 2) {
-                    if (percentage <= 1.5) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 3) {
-                    if (percentage <= 2) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 4) {
-                    if (percentage <= 2.5) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 5) {
-                    if (percentage <= 3) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 6) {
-                    if (percentage <= 3.5) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 7) {
-                    if (percentage <= 4) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 8) {
-                    if (percentage <= 4.5) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 9) {
-                    if (percentage <= 5) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 10) {
-                    if (percentage <= 5.5) {
-                        addFatigue = false;
-                    }
-                } else if (level <= 11) {
-                    if (percentage <= 6) {
-                        addFatigue = false;
-                    }
-                }
-                if (!addFatigue) {
-                    player.sendMessage("§6 [전문직업] §7능숙한 채광 능력으로 피로도가 늘어나지 않았습니다.");
-                }
-            }
-
-
             String id = MMOItems.getID(rewardItem);
             double itemDropPercentage = MiningItemRepository.getInstance().getMiningCache().get(id).getItemDropPercentage();
             if (itemDropPercentage < 1) {
                 player.sendMessage("§f  " + rewardItem.getItemMeta().getDisplayName() + "§f을 획득했습니다!");
             }
-            if (addFatigue) {
-                Material type = player.getInventory().getItemInMainHand().getType();
-                double additionalFatigue = 1.0;
-                if (type.equals(Material.IRON_PICKAXE)) {
-                    additionalFatigue = 0.6;
-                } else if (type.equals(Material.DIAMOND_PICKAXE)) {
-                    additionalFatigue = 0.5;
-                } else if (type.equals(Material.NETHERITE_PICKAXE)) {
-                    additionalFatigue = 0.4;
-                }
-                if (activate) {
-                    additionalFatigue -= additionalFatigue / 10;
-                }
-//                additionalFatigue -= additionalFatigue / 10; // 해피썬데이
-                addFatigue(player, additionalFatigue);
-
-                PlayerRepository.getInstance().giveMiningExp(player, 1);
-
-
+            Material type = player.getInventory().getItemInMainHand().getType();
+            double additionalFatigue = 1.0;
+            if (type.equals(Material.IRON_PICKAXE)) {
+                additionalFatigue = 0.6;
+            } else if (type.equals(Material.DIAMOND_PICKAXE)) {
+                additionalFatigue = 0.5;
+            } else if (type.equals(Material.NETHERITE_PICKAXE)) {
+                additionalFatigue = 0.4;
             }
+            if (activate) {
+                additionalFatigue -= additionalFatigue / 10;
+            }
+            addFatigue(player, additionalFatigue);
         }
     }
 

@@ -22,9 +22,6 @@ import org.desp.mining.database.MiningRepository;
 import org.desp.mining.dto.MiningDto;
 import org.desp.mining.dto.MiningItemDto;
 import org.desp.mining.event.MiningEvent;
-import org.dople.profess.API.ProfessAPI;
-import org.dople.profess.Database.PlayerRepository;
-import org.dople.profess.Dto.ProfessDTO;
 import org.swlab.etcetera.EtCetera;
 
 import java.util.*;
