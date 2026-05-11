@@ -3,19 +3,19 @@ package org.desp.mining;
 import static org.desp.mining.listener.MiningListener.miningCache;
 
 import org.desp.mining.command.FatigueCommand;
+import org.desp.mining.command.MiningBagCommand;
 import org.desp.mining.command.ReduceFatigueCommand;
 import org.desp.mining.listener.MiningListener;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.desp.mining.database.MiningBagRepository;
 import org.desp.mining.database.MiningRepository;
+import org.desp.mining.dto.MiningBagDto;
 import org.desp.mining.dto.MiningDto;
-import org.desp.mining.listener.MiningListener;
 import org.desp.mining.placeholder.MiningPlaceHolder;
 import org.desp.mining.scheduler.MiningScheduler;
 
@@ -31,15 +31,20 @@ public final class Mining extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new MiningListener(), this);
         getCommand("피로도확인").setExecutor(new FatigueCommand());
         getCommand("피로도감소").setExecutor(new ReduceFatigueCommand());
+        getCommand("광물가방").setExecutor(new MiningBagCommand());
 
         Collection<? extends Player> onlinePlayers = Bukkit.getServer().getOnlinePlayers();
         MiningRepository repository = MiningRepository.getInstance();
+        MiningBagRepository bagRepository = MiningBagRepository.getInstance();
 
         for (Player player : onlinePlayers) {
             String user_id = player.getName();
             String uuid = player.getUniqueId().toString();
             MiningDto playerMiningData = repository.getPlayerMiningData(uuid, user_id);
             miningCache.put(uuid,playerMiningData);
+
+            MiningBagDto bag = bagRepository.getPlayerBag(uuid, user_id);
+            bagRepository.getBagCache().put(uuid, bag);
         }
         if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")){
             new MiningPlaceHolder(this).register();
@@ -50,6 +55,7 @@ public final class Mining extends JavaPlugin {
     public void onDisable() {
         Collection<? extends Player> onlinePlayers = Bukkit.getServer().getOnlinePlayers();
         MiningRepository repository = MiningRepository.getInstance();
+        MiningBagRepository bagRepository = MiningBagRepository.getInstance();
         for (Player player : onlinePlayers) {
             String uuid = player.getUniqueId().toString();
             if (miningCache.get(uuid) == null) {
@@ -61,6 +67,11 @@ public final class Mining extends JavaPlugin {
                 miningCache.put(uuid, newPlayer);
             }
             repository.saveMining(uuid, miningCache);
+
+            MiningBagDto bag = bagRepository.getBagCache().get(uuid);
+            if (bag != null) {
+                bagRepository.saveBag(uuid, bag);
+            }
         }
     }
 }

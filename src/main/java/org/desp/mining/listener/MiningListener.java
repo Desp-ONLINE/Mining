@@ -2,7 +2,6 @@ package org.desp.mining.listener;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.lumine.mythic.bukkit.events.MythicMobDeathEvent;
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import org.bukkit.Bukkit;
@@ -22,11 +21,14 @@ import org.codehaus.plexus.util.dag.CycleDetectedException;
 import org.desp.IDEPass.api.IDEPassAPI;
 import org.desp.IDEPass.dto.IDEPassUserDataDto;
 import org.desp.mining.Mining;
+import org.desp.mining.database.MiningBagRepository;
 import org.desp.mining.database.MiningItemRepository;
 import org.desp.mining.database.MiningRepository;
+import org.desp.mining.dto.MiningBagDto;
 import org.desp.mining.dto.MiningDto;
 import org.desp.mining.dto.MiningItemDto;
 import org.desp.mining.event.MiningEvent;
+import org.desp.mining.utils.MiningBagItems;
 import org.swlab.etcetera.EtCetera;
 
 import java.util.*;
@@ -54,6 +56,9 @@ public class MiningListener implements Listener {
         Bukkit.getScheduler().runTaskLaterAsynchronously(Mining.getInstance(), () -> {
             MiningDto playerMiningData1 = miningRepository.getPlayerMiningData(uuid, user_id);
             miningCache.put(uuid, playerMiningData1);
+
+            MiningBagDto bag = MiningBagRepository.getInstance().getPlayerBag(uuid, user_id);
+            MiningBagRepository.getInstance().getBagCache().put(uuid, bag);
         }, 1L);
     }
 
@@ -64,6 +69,11 @@ public class MiningListener implements Listener {
 
         miningRepository.saveMining(uuid, miningCache);
         miningCache.remove(uuid);
+
+        MiningBagDto bag = MiningBagRepository.getInstance().getBagCache().remove(uuid);
+        if (bag != null) {
+            MiningBagRepository.getInstance().saveBag(uuid, bag);
+        }
     }
 
 
@@ -104,13 +114,24 @@ public class MiningListener implements Listener {
                 return;
             }
             ItemStack rewardItem = getRandomDropItem();
-            player.getInventory().addItem(rewardItem);
+            rewardItem.setAmount(1);
+            String id = MMOItems.getID(rewardItem);
+            String rewardDisplayName = rewardItem.getItemMeta().getDisplayName();
+            if (MiningBagItems.isBagItem(id)) {
+                MiningBagDto bag = MiningBagRepository.getInstance().getBagCache().get(uuid);
+                if (bag != null) {
+                    bag.addCount(id, 1);
+                }
+                player.sendActionBar("§f" + rewardDisplayName + " §7§ox1 §7(가방 +1 (/광물가방))");
+            } else {
+                player.getInventory().addItem(rewardItem);
+                player.sendActionBar("§f" + rewardDisplayName + " §7§ox1");
+            }
             Bukkit.getPluginManager().callEvent(new MiningEvent(player, rewardItem));
 
-            String id = MMOItems.getID(rewardItem);
             double itemDropPercentage = MiningItemRepository.getInstance().getMiningCache().get(id).getItemDropPercentage();
             if (itemDropPercentage < 1) {
-                player.sendMessage("§f  " + rewardItem.getItemMeta().getDisplayName() + "§f을 획득했습니다!");
+                player.sendMessage("§f  " + rewardDisplayName + "§f을 획득했습니다!");
             }
             Material type = player.getInventory().getItemInMainHand().getType();
             double additionalFatigue = 1.0;
