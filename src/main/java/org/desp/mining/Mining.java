@@ -27,6 +27,7 @@ public final class Mining extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        saveDefaultConfig();
         MiningScheduler.startFatigueReductionTask();
         Bukkit.getPluginManager().registerEvents(new MiningListener(), this);
         getCommand("피로도확인").setExecutor(new FatigueCommand());

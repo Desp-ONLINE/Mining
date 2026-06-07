@@ -122,7 +122,7 @@ public class MiningListener implements Listener {
                 if (bag != null) {
                     bag.addCount(id, 1);
                 }
-                player.sendActionBar("§f" + rewardDisplayName + " §7§ox1 §7(가방 +1 (/광물가방))");
+                player.sendActionBar("§f" + rewardDisplayName + " §7§ox2 §7(가방 +1 (/광물가방))");
             } else {
                 player.getInventory().addItem(rewardItem);
                 player.sendActionBar("§f" + rewardDisplayName + " §7§ox1");
