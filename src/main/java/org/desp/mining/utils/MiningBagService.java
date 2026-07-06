@@ -13,7 +13,8 @@ import org.bukkit.inventory.ItemStack;
 import org.desp.mining.database.MiningBagRepository;
 import org.desp.mining.dto.MiningBagDto;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MiningBagService {
 
@@ -117,15 +118,37 @@ public class MiningBagService {
             player.sendMessage(ColorManager.format("#FF8888 아이템 데이터를 찾을 수 없습니다."));
             return;
         }
-        item.setAmount(amount);
 
-        Mail mail = MMOMail.getInstance().getMailAPI().createMail(
-                "광물 가방",
-                "광물 가방에서 회수한 아이템입니다.",
-                0,
-                Collections.singletonList(item)
-        );
-        MMOMail.getInstance().getMailAPI().sendMail(player.getName(), mail);
+        // 65개 이상은 아이템이 유실되는 버그가 있어 50개 단위 스택으로 쪼개서 발송한다.
+        List<ItemStack> stacks = new ArrayList<>();
+        if (amount <= 64) {
+            ItemStack stack = item.clone();
+            stack.setAmount(amount);
+            stacks.add(stack);
+        } else {
+            int left = amount;
+            while (left > 0) {
+                int stackSize = Math.min(50, left);
+                ItemStack stack = item.clone();
+                stack.setAmount(stackSize);
+                stacks.add(stack);
+                left -= stackSize;
+            }
+        }
+
+        // 한 메일에 최대 9스택(450개)까지만 담고, 넘치면 여러 통으로 나눠 보낸다.
+        int mailCount = 0;
+        for (int i = 0; i < stacks.size(); i += 9) {
+            List<ItemStack> mailItems = new ArrayList<>(stacks.subList(i, Math.min(i + 9, stacks.size())));
+            Mail mail = MMOMail.getInstance().getMailAPI().createMail(
+                    "광물 가방",
+                    "광물 가방에서 회수한 아이템입니다.",
+                    0,
+                    mailItems
+            );
+            MMOMail.getInstance().getMailAPI().sendMail(player.getName(), mail);
+            mailCount++;
+        }
 
         int remaining = owned - amount;
         if (remaining <= 0) {
@@ -135,9 +158,13 @@ public class MiningBagService {
         }
         MiningBagRepository.getInstance().saveBag(uuid, dto);
 
+        String splitInfo = stacks.size() > 1
+                ? " §7§o(50개씩 " + stacks.size() + "묶음, 메일 " + mailCount + "통)"
+                : "";
         player.sendMessage(ColorManager.format(
                 "#FFF285  [ 광물 가방 ] §f" + displayNameOf(itemId)
                         + "§f §6x" + amount + " §f을(를) §6메일§f로 발송하였습니다."
+                        + splitInfo
                         + " §7§o(남은 수량: " + remaining + "개)"
         ));
     }

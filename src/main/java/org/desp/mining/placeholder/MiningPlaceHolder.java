@@ -5,7 +5,8 @@ import net.Indyuce.mmocore.api.MMOCoreAPI;
 import org.bukkit.entity.Player;
 import org.desp.mining.Mining;
 import org.desp.mining.database.MiningRepository;
-import org.desp.mining.listener.MiningListener;
+import org.desp.mining.skill.MiningSkillService;
+import org.desp.mining.skill.MiningSkillType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -38,8 +39,29 @@ public class MiningPlaceHolder extends PlaceholderExpansion {
         if (player == null) {
             return "";
         }
+        var miningData = MiningRepository.getInstance().getPlayerData(player);
+        if (miningData == null) {
+            return "";
+        }
         if(identifier.equals("fatigue")){
-            return MiningListener.miningCache.get(player.getUniqueId().toString()).getFatigue()+"";
+            return miningData.getFatigue()+"";
+        }
+        if(identifier.equals("level")){
+            return miningData.getLevel()+"";
+        }
+        if(identifier.equals("exp")){
+            return miningData.getExp()+"";
+        }
+        if(identifier.equals("required_exp")){
+            return MiningSkillService.getRequiredExp(miningData.getLevel())+"";
+        }
+        if(identifier.equals("skill_points")){
+            return miningData.getSkillPoints()+"";
+        }
+        for (MiningSkillType type : MiningSkillType.values()) {
+            if (identifier.equalsIgnoreCase("skill_" + type.name())) {
+                return miningData.getSkillLevel(type.name())+"";
+            }
         }
         return "";
     }
