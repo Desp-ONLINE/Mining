@@ -13,7 +13,7 @@ public class MiningBagDto implements MongoData<String> {
     private String user_id;
     private String uuid;
     private Map<String, Integer> bag;
-    // 마지막 저장 시각(ms). 로드 시 Redis/Mongo 중 더 최신 데이터를 고르는 기준이 된다.
+    // 마지막 저장 시각(ms). 낡은 스냅샷이 더 최신 저장본을 덮어쓰지 않게 하는 기준이 된다.
     private long lastSaved;
 
     @Override

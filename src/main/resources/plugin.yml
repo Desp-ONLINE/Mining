@@ -2,7 +2,9 @@ name: Mining
 version: '1.0-SNAPSHOT'
 main: org.desp.mining.Mining
 api-version: '1.20'
-depend: [Vault, MongoLibraryPlugin, BinggreAPI, BinggreEconomy, MMOCore, MMOItems, MMOMail, ShopGUIPlus]
+depend: [Vault, MongoLibraryPlugin, EtCetera, BinggreAPI, BinggreEconomy, MMOCore, MMOItems, MMOMail, ShopGUIPlus]
+# afk 채널에는 DataSync 가 없으므로 softdepend (있으면 로드 순서만 보장)
+softdepend: [DataSync]
 commands:
   피로도확인:
     aliases: ["vlfhehghkrdls"]

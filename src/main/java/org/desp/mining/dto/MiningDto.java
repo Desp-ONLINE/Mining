@@ -21,7 +21,7 @@ public class MiningDto implements MongoData<String> {
     private int skillPoints = 0;
     @Builder.Default
     private Map<String, Integer> skills = new HashMap<>();
-    // 마지막 저장 시각(ms). 로드 시 Redis/Mongo 중 더 최신 데이터를 고르는 기준이 된다.
+    // 마지막 저장 시각(ms). 낡은 스냅샷이 더 최신 저장본을 덮어쓰지 않게 하는 기준이 된다.
     @Builder.Default
     private long lastSaved = 0L;
 

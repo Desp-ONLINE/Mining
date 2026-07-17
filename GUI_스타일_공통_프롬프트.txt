@@ -1,0 +1,47 @@
+[서버 공통 GUI/메시지 스타일 가이드 — 새 플러그인/기능 작업 시 항상 이 스타일을 따라줘]
+
+이 서버의 모든 GUI와 채팅/액션바 메시지는 아래 파스텔톤 스타일로 통일되어 있어.
+색상 적용은 BinggreAPI의 ColorManager.format("#RRGGBB 텍스트") 방식을 사용해.
+(레거시 §c 같은 진한 색코드는 GUI 제목의 §8 외에는 쓰지 마.)
+
+■ 공통 파스텔 팔레트 (상수로 선언해서 사용)
+- PASTEL_YELLOW = #FDFFB6  → 강조 수치(레벨, 포인트, 퍼센트), 클릭 안내 키워드
+- PASTEL_RED    = #FFADAD  → 스킬/기능 테마색 1
+- PASTEL_PEACH  = #FFD6A5  → 스킬/기능 테마색 2, "최대 레벨" 같은 축하성 문구
+- PASTEL_BLUE   = #A5D8FF  → 스킬/기능 테마색 3, 목록 불릿(-)
+- SOFT_WHITE    = #EDEDED  → 라벨 텍스트 ("레벨 :", "현재 효과 :" 등)
+- SOFT_GRAY     = #C9C9C9  → 설명문, 보조 텍스트
+- DIM_GRAY      = #9E9E9E  → 부가 정보, ( / 최대치 ), 힌트 문구
+
+■ 채팅 메시지 전용 색
+- 시스템 헤더  = #FFF285  → "#FFF285  [ 시스템명 ] §f본문" 형태 (헤더 앞에 공백 2칸)
+- 에러/경고    = #FF8888  → "#FF8888 메시지" (모든 실패/권한/사용법 오류 메시지)
+- 명령어 안내  = #C9C9C9 또는 #AAAAAA 로 명령어, #7B7B7B 로 구분자(-), #FFEA80 으로 설명
+
+■ GUI 형태 규칙
+- InventoryHolder 구현 클래스로 만들고, 크기는 27칸(3줄) 기본
+- 제목: "§8[ 이름 ]" 형태 (진한 회색 대괄호)
+- 빈 칸은 전부 GRAY_STAINED_GLASS_PANE, 이름 " " 로 채움 (filler)
+- 정보 아이템은 상단 중앙 4번 슬롯 (예: EXPERIENCE_BOTTLE)
+- 콘텐츠 아이템은 중간 줄에 한 칸씩 띄워 배치 (11, 13, 15 슬롯)
+- 모든 아이템에 ItemFlag.HIDE_ATTRIBUTES, HIDE_ENCHANTS, HIDE_UNBREAKABLE 적용
+- 아이템 이름: 테마색 + 앞에 공백 1칸 (예: ColorManager.format(PASTEL_RED + " 스킬명"))
+
+■ 로어(lore) 작성 규칙
+- 각 줄 앞에 공백 3칸 들여쓰기 ("   레벨 : ...")
+- 섹션 사이는 빈 줄("")로 구분
+- 형식: SOFT_WHITE 라벨 + PASTEL_YELLOW 값 + DIM_GRAY 부가정보
+  예) "   레벨 : " + 노랑 "3" + 회색 " / 5"
+  예) "   필요 포인트 : " + 노랑 "2P " + 회색 "(보유: 5P)"
+- 설명문은 SOFT_GRAY 또는 DIM_GRAY 로 2줄 이내
+- 클릭 안내는 마지막에: PASTEL_YELLOW "   클릭 " + DIM_GRAY " - 동작 설명"
+  (쉬프트 클릭 등 추가 조작도 같은 형식으로 한 줄씩)
+
+■ 연출 규칙
+- 액션바: 획득/진행 상황 표시 (드랍 아이템 + 레벨/경험치 등), 위 팔레트 사용
+- 스킬/특수효과 발동: 타이틀 메시지
+- 레벨업: 채팅 메시지 + 사운드
+- 수치 강조는 항상 PASTEL_YELLOW, 설명은 SOFT_GRAY/DIM_GRAY 톤 유지
+
+참고 구현체: Mining 프로젝트(C:\Users\khw32\IdeaProjects\Mining)의
+gui/MiningSkillGUI.java (GUI/로어), utils/MiningBagService.java + command/ (채팅 메시지)

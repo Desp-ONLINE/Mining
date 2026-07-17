@@ -1,0 +1,42 @@
+채광 플러그인(C:\Users\khw32\IdeaProjects\Mining)에 광물가방 시스템이 있는데,
+이 채집 플러그인에도 완전히 동일한 구조로 채집가방을 추가해줘.
+채광 프로젝트의 아래 파일들을 먼저 읽고 구조를 그대로 따라해:
+
+- utils/MiningBagItems.java (가방에 들어가는 아이템 ID 상수 + 한글 별칭 매핑)
+- dto/MiningBagDto.java (uuid, user_id, bag(Map<String,Integer>) + addCount/getCount/clearCount)
+- database/MiningBagRepository.java (MongoDB "MiningBag" 컬렉션, bagCache Map, 로드/저장)
+- utils/MiningBagService.java (showBag / sellAll / withdraw)
+- command/MiningBagCommand.java (/광물가방 명령어)
+- listener/MiningListener.java (onBlockBreak의 가방 적립 부분, PlayerJoin/Quit 캐시 처리)
+- Mining.java (onEnable/onDisable에서 온라인 플레이어 가방 캐시 로드/저장)
+
+구현할 내용 (채광과 동일):
+
+1. 가방 적립: 채집 드랍 아이템 중 가방 대상 아이템(MMOItems ID 목록으로 관리)은
+   인벤토리에 주지 않고 가방(Map<아이템ID, 개수>)에 적립.
+   액션바에 "아이템명 (가방 +개수 (/채집가방))" 형태로 표시.
+   더블 드랍 등 개수 계산이 끝난 최종 개수로 적립할 것.
+
+2. 데이터 저장: MongoDB 컬렉션(예: GatheringBag)에 uuid/user_id/bag 저장.
+   접속 시 캐시에 로드, 퇴장/서버 종료 시 저장 (채광과 동일한 타이밍).
+
+3. 명령어 /채집가방 (한/영 오타 별칭도 plugin.yml에 등록):
+   - 인자 없음: 보유 광물(채집물) 목록과 개수 출력 + 하단에 판매/회수 사용법 안내
+   - 판매: 가방 전체를 ShopGUIPlus 판매가(getItemStackPriceSell)로 일괄 판매,
+     품목별 내역 + 총액 출력, EconomyManager.addMoney로 지급
+   - 회수 [아이템별칭] (개수): 해당 아이템을 MMOMail 메일로 발송하고 가방에서 차감.
+     개수 생략 시 전량 회수.
+
+4. 회수 시 스택 분할 (중요 버그 대응): 아이템 65개 이상을 한 스택으로 메일에
+   담으면 유실되는 버그가 있음. 64개 이하는 한 스택, 65개 이상이면 50개 단위
+   스택으로 쪼개고, 한 메일에는 최대 9스택(450개)까지만 담아서 넘치면 메일을
+   여러 통으로 나눠 발송해. (채광의 MiningBagService.withdraw 최신 버전 참고)
+   분할 시 안내 메시지에 "(50개씩 N묶음, 메일 N통)" 표시.
+
+5. 메시지/색상: 채광이랑 같은 파스텔톤 스타일
+   (ColorManager.format, 헤더 #FFF285 "  [ 채집 가방 ]", 에러 #FF8888,
+   목록 #FBFFBC, 명령어 안내 #AAAAAA/#7B7B7B/#FFEA80).
+
+이름은 Mining → Gathering(채광 → 채집)으로 바꾸고, 이 프로젝트의 기존 패키지
+구조와 코드 스타일에 맞춰줘. 가방 대상 아이템 ID 목록과 별칭은 이 플러그인의
+채집물 아이템에 맞게 바꿔서 상수 클래스로 정리해.

@@ -11,7 +11,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.desp.IDEPass.api.IDEPassAPI;
@@ -46,25 +45,8 @@ public class MiningListener implements Listener {
             .build();
 
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        // Redis(서버 인계본)와 Mongo 를 모두 읽어 최신본을 캐시에 올린다.
-        miningRepository.loadPlayerData(player);
-
-        String user_id = player.getName();
-        String uuid = player.getUniqueId().toString();
-        Bukkit.getScheduler().runTaskLaterAsynchronously(Mining.getInstance(), () -> {
-            MiningBagDto bag = MiningBagRepository.getInstance().getPlayerBag(uuid, user_id);
-            // 로드 실패(null)이거나 로드 중 퇴장했으면 캐시에 넣지 않는다. (빈 가방 덮어쓰기 방지)
-            if (bag != null && player.isOnline()) {
-                MiningBagRepository.getInstance().cacheLoadedBag(uuid, bag);
-            }
-        }, 1L);
-    }
-
-    @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        // Redis 에 짧은 TTL 로 남겨 서버 이동 시 다음 서버가 인계받고, Mongo 에 영구 저장한다.
+        // Mongo 에 영구 저장한다. (저장 큐가 순서와 완료를 보장한다)
         miningRepository.savePlayerDataOnQuit(event.getPlayer());
 
         String uuid = event.getPlayer().getUniqueId().toString();
@@ -97,9 +79,10 @@ public class MiningListener implements Listener {
 
         if (materialList.contains(blockType) && itemID.contains("곡괭이")) {
             MiningDto miningData = miningRepository.getPlayerData(player);
-            // 로드 실패(DB 오류) 상태에서는 진행분이 저장될 수 없으므로 채광을 막는다.
+            // DataLoadEvent 로드가 끝나기 전(또는 로드 실패)에는 채광을 막는다.
+            // 이 확인이 없으면 아래 피로도 확인이 엉뚱한 안내를 하거나 보상 로직이 NPE 를 낸다.
             if (miningData == null) {
-                player.sendMessage("§c채광 정보를 불러올 수 없습니다. 잠시 후 다시 접속해주세요.");
+                player.sendTitle("", "§7채광 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.", 0, 20, 5);
                 return;
             }
             double fatigue = miningData.getFatigue();
@@ -138,8 +121,14 @@ public class MiningListener implements Listener {
                 MiningBagDto bag = MiningBagRepository.getInstance().getBagCache().get(uuid);
                 if (bag != null) {
                     bag.addCount(id, dropAmount);
+                    dropActionBar = "§f" + rewardDisplayName + " §7§ox2 §7(가방 +" + dropAmount + " (/광물가방))" + doubleDropSuffix + eventSuffix;
+                } else {
+                    // 가방이 아직 로드되지 않았거나 로드에 실패한 상태.
+                    // 가방에 적립한 척하면 그대로 유실되므로 인벤토리로 지급한다.
+                    bagItem = false;
+                    player.getInventory().addItem(rewardItem);
+                    dropActionBar = "§f" + rewardDisplayName + " §7§ox" + dropAmount + doubleDropSuffix + eventSuffix;
                 }
-                dropActionBar = "§f" + rewardDisplayName + " §7§ox2 §7(가방 +" + dropAmount + " (/광물가방))" + doubleDropSuffix + eventSuffix;
             } else {
                 player.getInventory().addItem(rewardItem);
                 dropActionBar = "§f" + rewardDisplayName + " §7§ox" + dropAmount + doubleDropSuffix + eventSuffix;
@@ -170,12 +159,6 @@ public class MiningListener implements Listener {
             MiningSkillService.addMiningExp(player, miningData);
             player.sendActionBar(dropActionBar + " §8| " + levelStatusOf(miningData));
 
-            // 채광 결과(경험치/레벨/피로도/가방)를 다음 주기 플러시 때 Redis 로 보내도록 표시한다.
-            miningRepository.markSessionDirty(player);
-            if (bagItem) {
-                MiningBagRepository.getInstance().markSessionDirty(uuid);
-            }
-
             if (!triggeredSkills.isEmpty()) {
                 player.sendTitle("", String.join("§f, ", triggeredSkills) + " §f효과가 발동했습니다!", 0, 25, 10);
             }
@@ -193,7 +176,7 @@ public class MiningListener implements Listener {
     }
 
     public static void addFatigue(Player player, double amount) {
-        // 저장소가 캐시 변이와 dirty 표시를 함께 처리한다. (로드 실패 시 null 안전)
+        // 저장소가 캐시 변이를 처리한다. (로드 실패 시 null 안전)
         MiningRepository.getInstance().addFatigue(player, amount);
     }
 

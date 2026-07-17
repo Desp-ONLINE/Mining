@@ -16,12 +16,16 @@ import org.desp.mining.database.MiningBagRepository;
 import org.desp.mining.database.MiningConfigRepository;
 import org.desp.mining.database.MiningItemRepository;
 import org.desp.mining.database.MiningRepository;
+import org.desp.mining.database.MongoSaveExecutor;
 import org.desp.mining.dto.MiningBagDto;
 import org.desp.mining.gui.MiningSkillGUIListener;
+import org.desp.mining.listener.AfkJoinLoadListener;
+import org.desp.mining.listener.DataSyncLoadListener;
 import org.desp.mining.listener.MiningListener;
 import org.desp.mining.listener.MythicMobsListener;
 import org.desp.mining.placeholder.MiningPlaceHolder;
 import org.desp.mining.scheduler.MiningScheduler;
+import org.swlab.etcetera.EtCetera;
 
 public final class Mining extends JavaPlugin {
 
@@ -50,6 +54,13 @@ public final class Mining extends JavaPlugin {
         }
         MiningScheduler.startFatigueReductionTask();
         Bukkit.getPluginManager().registerEvents(new MiningListener(), this);
+        // afk 채널에는 DataSync 가 없어 DataLoadEvent 를 쓸 수 없다 → 접속 5초 뒤 로드로 대체.
+        // (DataSyncLoadListener 를 afk 에서 등록하면 DataLoadEvent 클래스 로드 실패로 터진다)
+        if ("afk".equals(EtCetera.getChannelType())) {
+            Bukkit.getPluginManager().registerEvents(new AfkJoinLoadListener(), this);
+        } else {
+            Bukkit.getPluginManager().registerEvents(new DataSyncLoadListener(), this);
+        }
         Bukkit.getPluginManager().registerEvents(new MythicMobsListener(), this);
         Bukkit.getPluginManager().registerEvents(new MiningSkillGUIListener(), this);
         getCommand("피로도확인").setExecutor(new FatigueCommand());
@@ -71,7 +82,6 @@ public final class Mining extends JavaPlugin {
             }
         }
         runAutoSaveScheduler();
-        runSessionFlushScheduler();
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new MiningPlaceHolder(this).register();
         }
@@ -79,7 +89,8 @@ public final class Mining extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // 스케줄러를 못 쓰는 시점이므로 동기 저장을 사용한다.
+        // 서버 종료 시에는 킥 → 퇴장 이벤트 → disable 순서라 이 시점엔 보통 온라인 플레이어가 없다.
+        // (아래 루프는 /reload 처럼 접속 유지 상태로 내려가는 경우를 위한 것)
         try {
             MiningRepository repository = MiningRepository.getInstance();
             MiningBagRepository bagRepository = MiningBagRepository.getInstance();
@@ -96,6 +107,9 @@ public final class Mining extends JavaPlugin {
             // onEnable 에서 저장소 초기화가 실패한 채 내려가는 경우 등
             getLogger().severe("종료 저장 실패: " + t);
         }
+        // 퇴장 이벤트에서 제출된 Mongo 저장까지 전부 끝난 뒤에 내려간다.
+        // (Bukkit 비동기 스케줄러 시절에는 여기서 전부 취소돼 재시작 때마다 롤백이 났다)
+        MongoSaveExecutor.shutdownAndDrain();
     }
 
     // 5분마다 온라인 플레이어의 채광 데이터(피로도/레벨/경험치/스킬, 가방)를 저장한다.
@@ -118,15 +132,5 @@ public final class Mining extends JavaPlugin {
                 }
             }
         }, 6000L, 6000L);
-    }
-
-    // 5초마다 변이가 있었던 세션(dirty)만 Redis 로 전송한다.
-    // 메인 스레드에서 스냅샷(직렬화)만 하고 네트워크 전송은 비동기라, 유저 수가 늘어도
-    // Redis 쓰기는 활동 유저당 5초에 1회로 고정된다. (서버 이동 인계 최신성의 상한 = 5초)
-    public void runSessionFlushScheduler() {
-        Bukkit.getScheduler().runTaskTimer(this, () -> {
-            MiningRepository.getInstance().flushDirtySessions();
-            MiningBagRepository.getInstance().flushDirtySessions();
-        }, 100L, 100L);
     }
 }
