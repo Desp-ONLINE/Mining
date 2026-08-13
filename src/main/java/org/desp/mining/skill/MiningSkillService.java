@@ -1,11 +1,15 @@
 package org.desp.mining.skill;
 
 import com.binggre.binggreapi.utils.ColorManager;
+import io.lumine.mythic.lib.api.item.NBTItem;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import net.Indyuce.mmoitems.MMOItems;
+import net.Indyuce.mmoitems.api.Type;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.desp.mining.database.MiningConfigRepository;
 import org.desp.mining.dto.MiningDto;
 import org.desp.mining.dto.MiningLevelConfigDto;
@@ -83,6 +87,79 @@ public class MiningSkillService {
                     + " §f레벨이 되었습니다! §7§o(스킬 포인트 +" + gainedPoints + ", /채광스킬)");
             player.sendMessage("");
             player.playSound(player, "minecraft:entity.player.levelup", SoundCategory.AMBIENT, 10, 1);
+        }
+    }
+
+    // ======================= 레벨 초기화 =======================
+
+    /** 레벨 초기화에 소모되는 MMOItems 아이템 (MISCELLANEOUS / 기타_원초의핵) */
+    public static final Type RESET_ITEM_TYPE = Type.MISCELLANEOUS;
+    public static final String RESET_ITEM_ID = "기타_원초의핵";
+    public static final int RESET_ITEM_COST = 20;
+
+    public static String getResetItemName() {
+        ItemStack item = MMOItems.plugin.getItem(RESET_ITEM_TYPE, RESET_ITEM_ID);
+        if (item != null && item.getItemMeta() != null && item.getItemMeta().hasDisplayName()) {
+            return item.getItemMeta().getDisplayName();
+        }
+        return "§f" + RESET_ITEM_ID;
+    }
+
+    private static boolean isResetItem(ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) {
+            return false;
+        }
+        NBTItem nbt = NBTItem.get(stack);
+        return RESET_ITEM_ID.equals(nbt.getString("MMOITEMS_ITEM_ID"))
+                && RESET_ITEM_TYPE.getId().equals(nbt.getString("MMOITEMS_ITEM_TYPE"));
+    }
+
+    public static int countResetItems(Player player) {
+        int count = 0;
+        for (ItemStack stack : player.getInventory().getStorageContents()) {
+            if (isResetItem(stack)) {
+                count += stack.getAmount();
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 인벤토리에서 원초의 핵을 RESET_ITEM_COST 개 소모한다.
+     * 수량이 부족하면 아무것도 소모하지 않고 false 를 반환한다.
+     */
+    public static boolean consumeResetItems(Player player) {
+        if (countResetItems(player) < RESET_ITEM_COST) {
+            return false;
+        }
+        int remaining = RESET_ITEM_COST;
+        ItemStack[] contents = player.getInventory().getStorageContents();
+        for (int i = 0; i < contents.length && remaining > 0; i++) {
+            ItemStack stack = contents[i];
+            if (!isResetItem(stack)) {
+                continue;
+            }
+            if (stack.getAmount() > remaining) {
+                stack.setAmount(stack.getAmount() - remaining);
+                remaining = 0;
+            } else {
+                remaining -= stack.getAmount();
+                contents[i] = null;
+            }
+        }
+        player.getInventory().setStorageContents(contents);
+        return true;
+    }
+
+    /**
+     * 채광 레벨/경험치/스킬 포인트/스킬 레벨을 모두 초기 상태로 되돌린다.
+     */
+    public static void resetLevel(MiningDto miningData) {
+        miningData.setLevel(1);
+        miningData.setExp(0);
+        miningData.setSkillPoints(0);
+        if (miningData.getSkills() != null) {
+            miningData.getSkills().clear();
         }
     }
 

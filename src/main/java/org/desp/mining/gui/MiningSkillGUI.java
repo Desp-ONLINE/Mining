@@ -26,6 +26,7 @@ public class MiningSkillGUI implements InventoryHolder {
             15, MiningSkillType.RARE_ORES
     );
     private static final int INFO_SLOT = 4;
+    public static final int RESET_SLOT = 22;
 
     // 파스텔톤 팔레트
     private static final String PASTEL_YELLOW = "#FDFFB6";
@@ -63,6 +64,26 @@ public class MiningSkillGUI implements InventoryHolder {
         inventory.setItem(11, createSkillItem(miningData, MiningSkillType.NO_FATIGUE, Material.REDSTONE, PASTEL_RED));
         inventory.setItem(13, createSkillItem(miningData, MiningSkillType.DOUBLE_DROP, Material.NETHERITE_PICKAXE, PASTEL_PEACH));
         inventory.setItem(15, createSkillItem(miningData, MiningSkillType.RARE_ORES, Material.DIAMOND, PASTEL_BLUE));
+        inventory.setItem(RESET_SLOT, createResetItem());
+    }
+
+    private ItemStack createResetItem() {
+        List<String> lore = new ArrayList<>();
+        lore.add("");
+        lore.add(ColorManager.format(SOFT_GRAY + "   채광 레벨, 경험치, 스킬 포인트, 스킬 레벨을"));
+        lore.add(ColorManager.format(SOFT_GRAY + "   모두 초기 상태로 되돌립니다."));
+        lore.add("");
+        lore.add(ColorManager.format(SOFT_WHITE + "   필요 아이템 : ") + MiningSkillService.getResetItemName()
+                + ColorManager.format(PASTEL_YELLOW + " x" + MiningSkillService.RESET_ITEM_COST));
+        lore.add("");
+        lore.add(ColorManager.format(PASTEL_RED + "   초기화된 정보는 되돌릴 수 없습니다!"));
+        lore.add(ColorManager.format(PASTEL_YELLOW + "   쉬프트 클릭 " + DIM_GRAY + " - 레벨 초기화"));
+
+        ItemStack item = createItem(Material.PAPER, ColorManager.format(PASTEL_RED + " 채광 스킬 초기화"), lore);
+        ItemMeta meta = item.getItemMeta();
+        meta.setCustomModelData(10258);
+        item.setItemMeta(meta);
+        return item;
     }
 
     private ItemStack createInfoItem(MiningDto miningData) {

@@ -27,8 +27,9 @@ public class MiningSkillGUIListener implements Listener {
             return;
         }
 
+        boolean resetClick = event.getSlot() == MiningSkillGUI.RESET_SLOT;
         MiningSkillType type = MiningSkillGUI.SLOT_TO_SKILL.get(event.getSlot());
-        if (type == null) {
+        if (type == null && !resetClick) {
             return;
         }
 
@@ -36,6 +37,11 @@ public class MiningSkillGUIListener implements Listener {
         if (miningData == null) {
             player.sendMessage("§c채광 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.");
             player.closeInventory();
+            return;
+        }
+
+        if (resetClick) {
+            handleReset(player, miningData, event.isShiftClick(), gui);
             return;
         }
 
@@ -63,6 +69,40 @@ public class MiningSkillGUIListener implements Listener {
                     + " §f이(가) 되었습니다! §7§o(포인트 " + usedPoints + "P 사용, 남은 포인트: "
                     + miningData.getSkillPoints() + "P)");
         }
+
+        gui.refresh(miningData);
+    }
+
+    private void handleReset(Player player, MiningDto miningData, boolean shiftClick, MiningSkillGUI gui) {
+        if (!shiftClick) {
+            player.playSound(player, "minecraft:entity.villager.no", SoundCategory.AMBIENT, 1, 1);
+            player.sendMessage("§7[채광 스킬] §f레벨 초기화는 §e쉬프트 클릭§f으로만 진행할 수 있습니다.");
+            return;
+        }
+
+        int owned = MiningSkillService.countResetItems(player);
+        if (owned < MiningSkillService.RESET_ITEM_COST) {
+            player.playSound(player, "minecraft:entity.villager.no", SoundCategory.AMBIENT, 1, 1);
+            player.sendMessage("§c" + MiningSkillService.getResetItemName() + "§c이(가) 부족합니다. §7§o(필요: "
+                    + MiningSkillService.RESET_ITEM_COST + "개, 보유: " + owned + "개)");
+            return;
+        }
+
+        if (!MiningSkillService.consumeResetItems(player)) {
+            player.playSound(player, "minecraft:entity.villager.no", SoundCategory.AMBIENT, 1, 1);
+            player.sendMessage("§c아이템 소모에 실패했습니다. 다시 시도해주세요.");
+            return;
+        }
+
+        MiningSkillService.resetLevel(miningData);
+        // 초기화는 되돌릴 수 없으므로 즉시 DB 에 반영한다.
+        MiningRepository.getInstance().savePlayerData(player);
+
+        player.playSound(player, "minecraft:entity.player.levelup", SoundCategory.AMBIENT, 1, 0.7f);
+        player.sendMessage("");
+        player.sendMessage("§7[채광 스킬] §f" + MiningSkillService.getResetItemName() + " §e"
+                + MiningSkillService.RESET_ITEM_COST + "개§f를 소모하여 채광 레벨을 초기화했습니다.");
+        player.sendMessage("");
 
         gui.refresh(miningData);
     }
