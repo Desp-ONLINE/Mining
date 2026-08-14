@@ -76,7 +76,7 @@ public class MiningSkillGUIListener implements Listener {
     private void handleReset(Player player, MiningDto miningData, boolean shiftClick, MiningSkillGUI gui) {
         if (!shiftClick) {
             player.playSound(player, "minecraft:entity.villager.no", SoundCategory.AMBIENT, 1, 1);
-            player.sendMessage("§7[채광 스킬] §f레벨 초기화는 §e쉬프트 클릭§f으로만 진행할 수 있습니다.");
+            player.sendMessage("§7[채광 스킬] §f스킬 초기화는 §e쉬프트 클릭§f으로만 진행할 수 있습니다.");
             return;
         }
 
@@ -94,14 +94,15 @@ public class MiningSkillGUIListener implements Listener {
             return;
         }
 
-        MiningSkillService.resetLevel(miningData);
-        // 초기화는 되돌릴 수 없으므로 즉시 DB 에 반영한다.
+        MiningSkillService.resetSkills(miningData);
+        // 아이템을 이미 소모했으므로 즉시 DB 에 반영한다.
         MiningRepository.getInstance().savePlayerData(player);
 
         player.playSound(player, "minecraft:entity.player.levelup", SoundCategory.AMBIENT, 1, 0.7f);
         player.sendMessage("");
         player.sendMessage("§7[채광 스킬] §f" + MiningSkillService.getResetItemName() + " §e"
-                + MiningSkillService.RESET_ITEM_COST + "개§f를 소모하여 채광 레벨을 초기화했습니다.");
+                + MiningSkillService.RESET_ITEM_COST + "개§f를 소모하여 스킬을 초기화했습니다. §7§o(보유 포인트: "
+                + miningData.getSkillPoints() + "P)");
         player.sendMessage("");
 
         gui.refresh(miningData);

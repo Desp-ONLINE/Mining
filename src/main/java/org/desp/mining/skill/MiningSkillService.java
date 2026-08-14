@@ -152,15 +152,15 @@ public class MiningSkillService {
     }
 
     /**
-     * 채광 레벨/경험치/스킬 포인트/스킬 레벨을 모두 초기 상태로 되돌린다.
+     * 투자한 스킬을 모두 초기화하고, 스킬 포인트를 현재 레벨 기준 총량으로 되돌린다.
+     * (레벨\경험치는 그대로 유지된다. 예: 32레벨이면 31회 레벨업 분량의 포인트를 돌려받는다.)
      */
-    public static void resetLevel(MiningDto miningData) {
-        miningData.setLevel(1);
-        miningData.setExp(0);
-        miningData.setSkillPoints(0);
+    public static void resetSkills(MiningDto miningData) {
         if (miningData.getSkills() != null) {
             miningData.getSkills().clear();
         }
+        int level = Math.max(miningData.getLevel(), 1);
+        miningData.setSkillPoints((level - 1) * getSkillPointsPerLevel());
     }
 
     // ======================= 스킬 공통 =======================
