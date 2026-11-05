@@ -65,7 +65,9 @@ public final class Mining extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new MiningSkillGUIListener(), this);
         getCommand("피로도확인").setExecutor(new FatigueCommand());
         getCommand("피로도감소").setExecutor(new ReduceFatigueCommand());
-        getCommand("광물가방").setExecutor(new MiningBagCommand());
+        MiningBagCommand miningBagCommand = new MiningBagCommand();
+        getCommand("광물가방").setExecutor(miningBagCommand);
+        getCommand("광물가방").setTabCompleter(miningBagCommand);
         getCommand("채광스킬").setExecutor(new MiningSkillCommand());
         getCommand("채광관리").setExecutor(new MiningAdminCommand());
         getCommand("채광이벤트").setExecutor(new MiningEventCommand());

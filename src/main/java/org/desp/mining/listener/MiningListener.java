@@ -71,7 +71,7 @@ public class MiningListener implements Listener {
         if (!player.isOp()) {
             event.setCancelled(true);
         }
-        if(!player.getWorld().getName().equals("world") && !EtCetera.getChannelType().equals("lobby")) {
+        if (!player.getWorld().getName().equals("world") && !EtCetera.getChannelType().equals("lobby")) {
             player.sendMessage("§c 채광할 수 있는 장소가 아닙니다. /채광");
             event.setCancelled(true);
             return;
@@ -139,14 +139,19 @@ public class MiningListener implements Listener {
             if (itemDropPercentage < 1) {
                 player.sendMessage("§f  " + rewardDisplayName + "§f을 획득했습니다!");
             }
-            Material type = player.getInventory().getItemInMainHand().getType();
-            double additionalFatigue = 1.0;
+            ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
+            Material type = itemInMainHand.getType();
+            double additionalFatigue = 1.2;
             if (type.equals(Material.IRON_PICKAXE)) {
-                additionalFatigue = 0.6;
+                additionalFatigue = 1.2;
             } else if (type.equals(Material.DIAMOND_PICKAXE)) {
-                additionalFatigue = 0.5;
+                additionalFatigue = 1.0;
             } else if (type.equals(Material.NETHERITE_PICKAXE)) {
-                additionalFatigue = 0.4;
+                if (itemInMainHand.getItemMeta().getCustomModelData() >= 1) {
+                    additionalFatigue = 0.6;
+                } else {
+                    additionalFatigue = 0.8;
+                }
             }
             if (activate) {
                 additionalFatigue -= additionalFatigue / 10;
