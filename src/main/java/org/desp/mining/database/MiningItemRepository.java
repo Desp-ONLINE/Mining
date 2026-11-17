@@ -31,10 +31,14 @@ public class MiningItemRepository {
         for (Document document : documents) {
             String item_id = document.getString("item_id");
             double itemDropPercentage = ((Number) document.get("itemDropPercentage")).doubleValue();
+            // amount 표기가 없거나 1보다 작으면 1개로 지급한다.
+            Object rawAmount = document.get("amount");
+            int amount = rawAmount instanceof Number number ? Math.max(1, number.intValue()) : 1;
 
             MiningItemDto miningItemDto = MiningItemDto.builder()
                     .item_id(item_id)
                     .itemDropPercentage(itemDropPercentage)
+                    .amount(amount)
                     .build();
             miningCache.put(item_id, miningItemDto);
         }
@@ -43,6 +47,11 @@ public class MiningItemRepository {
     public Map<String, MiningItemDto> getMiningCache() {
         loadMiningData();
         return miningCache;
+    }
+
+    /** DB 를 다시 읽지 않고 현재 캐시에서 드랍 아이템 정보를 꺼낸다. */
+    public MiningItemDto getCachedItem(String itemId) {
+        return miningCache.get(itemId);
     }
 
 }

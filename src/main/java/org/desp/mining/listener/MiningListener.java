@@ -101,7 +101,10 @@ public class MiningListener implements Listener {
                 return;
             }
             List<String> triggeredSkills = new ArrayList<>();
-            int dropAmount = MiningSkillService.rollDoubleDrop(miningData) ? 2 : 1;
+            // DB 의 amount 가 기본 지급 개수이며, 더블 드랍이면 2배가 된다.
+            MiningItemDto rewardData = itemRepository.getCachedItem(MMOItems.getID(rewardItem));
+            int baseAmount = rewardData == null ? 1 : rewardData.getAmount();
+            int dropAmount = MiningSkillService.rollDoubleDrop(miningData) ? baseAmount * 2 : baseAmount;
             if (dropAmount > 1) {
                 triggeredSkills.add("§6더블 드랍");
             }
@@ -120,8 +123,10 @@ public class MiningListener implements Listener {
             if (bagItem) {
                 MiningBagDto bag = MiningBagRepository.getInstance().getBagCache().get(uuid);
                 if (bag != null) {
-                    bag.addCount(id, dropAmount);
-                    dropActionBar = "§f" + rewardDisplayName + " §7§ox2 §7(가방 +" + dropAmount + " (/광물가방))" + doubleDropSuffix + eventSuffix;
+                    // 응집 아이템이 드랍되면 하위 아이템 개수로 환산해서 적립한다.
+                    int bagAmount = dropAmount * MiningBagItems.unitOf(id);
+                    bag.addCount(MiningBagItems.baseIdOf(id), bagAmount);
+                    dropActionBar = "§f" + rewardDisplayName + " §7§ox" + dropAmount + " §7(가방 +" + bagAmount + " (/광물가방))" + doubleDropSuffix + eventSuffix;
                 } else {
                     // 가방이 아직 로드되지 않았거나 로드에 실패한 상태.
                     // 가방에 적립한 척하면 그대로 유실되므로 인벤토리로 지급한다.

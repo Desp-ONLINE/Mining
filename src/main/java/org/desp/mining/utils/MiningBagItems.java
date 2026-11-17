@@ -33,11 +33,11 @@ public class MiningBagItems {
     // 한 번에 회수할 수 있는 최대 수량 (하위 아이템 기준)
     public static final int MAX_WITHDRAW = 2000;
 
-    // 채광하면 자동으로 가방에 쌓이고, 일괄 판매 대상이 되는 광물
+    // 일괄 판매 대상이 되는 광물
     private static final List<String> ORE_IDS = List.of(IRON, GOLD, LAPIS, DIAMOND, EMERALD);
     private static final Set<String> ORE_SET = new HashSet<>(ORE_IDS);
 
-    // 직접 넣기와 회수만 가능한 아이템 (자동 적립과 일괄 판매 대상이 아니다)
+    // 일괄 판매 대상이 아닌 특수 아이템 (채광 시 자동 적립, 넣기, 회수는 가능하다)
     private static final List<String> SPECIAL_IDS;
     // 가방에 보관할 수 있는 전체 아이템
     private static final List<String> STORABLE_IDS;
@@ -79,9 +79,9 @@ public class MiningBagItems {
         STORABLE_SET = new HashSet<>(STORABLE_IDS);
     }
 
-    /** 채광 시 자동으로 가방에 쌓이는 광물인지 확인한다. */
+    /** 채광 시 자동으로 가방에 쌓이는 아이템인지 확인한다. 가방에 넣을 수 있는 아이템(응집 포함)은 모두 해당한다. */
     public static boolean isBagItem(String itemId) {
-        return itemId != null && ORE_SET.contains(itemId);
+        return baseIdOf(itemId) != null;
     }
 
     public static String condensedIdOf(String itemId) {
@@ -134,7 +134,7 @@ public class MiningBagItems {
         return ORE_IDS;
     }
 
-    /** 직접 넣기와 회수만 가능한 아이템 목록 (래디언트스톤, 네더라이트, 퓨전스틸) */
+    /** 일괄 판매 대상이 아닌 특수 아이템 목록 (래디언트스톤, 네더라이트, 퓨전스틸) */
     public static List<String> getSpecialIds() {
         return SPECIAL_IDS;
     }
